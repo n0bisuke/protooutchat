@@ -1,22 +1,17 @@
+const app = require('express')();
+const { v4 } = require('uuid');
 
-const express = require('express');
-const app = express();
-
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-app.get('/', (req, res) => {
-  try {
-    res.send({ name: "hoge" });
-  } catch (error) {
-    res.sendStatus(500);
-  }
+app.use(express.static('public'));
+app.get('/api', (req, res) => {
+  const path = `/api/item/${v4()}`;
+  res.setHeader('Content-Type', 'text/html');
+  res.setHeader('Cache-Control', 's-max-age=1, stale-while-revalidate');
+  res.end(`Hello! Go to item: <a href="${path}">${path}</a>`);
 });
 
-//app.listen(process.env.PORT || 3000);
-app.listen({ port: 3000 }, () => {
-  console.log(`Server ready at http://localhost:3000`);
+app.get('/api/item/:slug', (req, res) => {
+  const { slug } = req.params;
+  res.end(`Item: ${slug}`);
 });
-console.log('starts');
+
 module.exports = app;
-// export default app;
