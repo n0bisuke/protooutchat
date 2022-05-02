@@ -19,7 +19,6 @@
   },
   "homepage": "https://github.com/n0bisuke/protooutchat#readme",
   "dependencies": {
-    "@line/bot-sdk": "^7.5.0",
     "@skyway-sdk/token": "^0.2.0-beta.8",
     "axios": "^0.27.2",
     "express": "^4.18.1",

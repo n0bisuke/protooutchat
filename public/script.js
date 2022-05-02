@@ -4,7 +4,7 @@ const {
     SkyWayMediaDevices,
     SkyWayRoom,
     uuidV4,
-  } = skyway_room;
+} = skyway_room;
 
   (async () => {
     const myVideo = document.getElementById("my-video");
@@ -22,63 +22,72 @@ const {
     const roomNameInput = document.getElementById("room-name");
     const myId = document.getElementById("my-id");
 
-    document.getElementById("join").onclick = async () => {
-      if (roomNameInput.value === "") return;
+    const join = async() => {
+        if(location.hash) roomNameInput.value = location.hash.split('#')[1];
+        if (roomNameInput.value === "") return;
 
-      const res = await fetch(`/token`);
-      const data = await res.json();
-    //   console.log(data);
-      const context = await SkyWayContext.Create(data.tokenString);
+        console.log(roomNameInput.value);
+        //トークン
+        const res = await fetch(`/token`);
+        const data = await res.json();
+        const context = await SkyWayContext.Create(data.tokenString);
+  
+        const room = await SkyWayRoom.FindOrCreate(context, {
+          type: "p2p",
+          name: roomNameInput.value,
+        });
+  
+        const me = await room.join();
+  
+        myId.textContent = me.id;
+  
+        await me.publish(audio);
+        await me.publish(video);
+  
+        function subscribeAndAttach(publication) {
+          if (publication.publisher.id === me.id) return;
+  
+          const subscribeButton = document.createElement("button");
+          subscribeButton.textContent = `${publication.publisher.id}: ${publication.contentType}`;
+  
+          buttonArea.appendChild(subscribeButton);
+  
+          subscribeButton.onclick = async () => {
+            const { stream } = await me.subscribe(publication.id);
+  
+            let newMedia;
+            switch (stream.track.kind) {
+              case "video":
+                newMedia = document.createElement("video");
+                newMedia.playsInline = true;
+                newMedia.autoplay = true;
+                break;
+              case "audio":
+                newMedia = document.createElement("audio");
+                newMedia.controls = true;
+                newMedia.autoplay = true;
+                break;
+              default:
+                return;
+            }
+  
+            stream.attach(newMedia);
+  
+            theirMediaArea.appendChild(newMedia);
+          };
+        }
+  
+        room.publications.forEach(subscribeAndAttach);
+  
+        room.onStreamPublished.add(async (e) => {
+          subscribeAndAttach(e.publication, me);
+        });
+    }
 
-      const room = await SkyWayRoom.FindOrCreate(context, {
-        type: "p2p",
-        name: roomNameInput.value,
-      });
+    document.getElementById("join").onclick = join;
 
-      const me = await room.join();
+    if(location.hash){
+        join();
+    }
 
-      myId.textContent = me.id;
-
-      await me.publish(audio);
-      await me.publish(video);
-
-      function subscribeAndAttach(publication) {
-        if (publication.publisher.id === me.id) return;
-
-        const subscribeButton = document.createElement("button");
-        subscribeButton.textContent = `${publication.publisher.id}: ${publication.contentType}`;
-
-        buttonArea.appendChild(subscribeButton);
-
-        subscribeButton.onclick = async () => {
-          const { stream } = await me.subscribe(publication.id);
-
-          let newMedia;
-          switch (stream.track.kind) {
-            case "video":
-              newMedia = document.createElement("video");
-              newMedia.playsInline = true;
-              newMedia.autoplay = true;
-              break;
-            case "audio":
-              newMedia = document.createElement("audio");
-              newMedia.controls = true;
-              newMedia.autoplay = true;
-              break;
-            default:
-              return;
-          }
-
-          stream.attach(newMedia);
-
-          theirMediaArea.appendChild(newMedia);
-        };
-      }
-
-      room.publications.forEach(subscribeAndAttach);
-
-      room.onStreamPublished.add(async (e) => {
-        subscribeAndAttach(e.publication, me);
-      });
-    };
   })();
