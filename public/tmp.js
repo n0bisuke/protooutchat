@@ -17,6 +17,52 @@ const {
     video.attach(myVideo);
     await myVideo.play();
 
+    const testToken = new SkyWayAuthToken({
+      jti: uuidV4(),
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 600,
+      scope: {
+        app: {
+          id: "ここにアプリケーションIDをペーストしてください",
+          turn: true,
+          actions: ["read"],
+          channels: [
+            {
+              id: "*",
+              name: "*",
+              actions: ["write"],
+              members: [
+                {
+                  id: "*",
+                  name: "*",
+                  actions: ["write"],
+                  publication: {
+                    actions: ["write"],
+                  },
+                  subscription: {
+                    actions: ["write"],
+                  },
+                },
+              ],
+              sfuBots: [
+                {
+                  actions: ["write"],
+                  forwardings: [
+                    {
+                      actions: ["write"]
+                    }
+                  ]
+                }
+              ]
+            },
+          ],
+        },
+      },
+    });
+    const tokenString = testToken.encode(
+      "ここにシークレットキーをペーストしてください"
+    );
+
     const buttonArea = document.getElementById("button-area");
     const theirMediaArea = document.getElementById("their-media-area");
     const roomNameInput = document.getElementById("room-name");
@@ -25,10 +71,7 @@ const {
     document.getElementById("join").onclick = async () => {
       if (roomNameInput.value === "") return;
 
-      const res = await fetch(`/token`);
-      const data = await res.json();
-    //   console.log(data);
-      const context = await SkyWayContext.Create(data.tokenString);
+      const context = await SkyWayContext.Create(tokenString);
 
       const room = await SkyWayRoom.FindOrCreate(context, {
         type: "p2p",

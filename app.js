@@ -1,6 +1,7 @@
 'use strict';
 
 const express = require('express');
+const tokenGen = require('./libs/token');
 const line = require('@line/bot-sdk');
 const PORT = process.env.PORT || 3000;
 
@@ -12,7 +13,10 @@ const config = {
 const app = express();
 
 app.use(express.static('public'));
-// app.get('/', (req, res) => res.send('Hello LINE BOT!(GET)')); //ブラウザ確認用(無くても問題ない)
+app.get('/token', (req, res) => {
+  res.send({tokenString: tokenGen()});
+});
+
 app.post('/webhook', line.middleware(config), (req, res) => {
     console.log(req.body.events);
 
